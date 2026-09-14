@@ -16,10 +16,11 @@
                 <thead>
                     <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-100">
                         <th class="py-3.5 px-4 font-semibold">Peminjam</th>
+                        <th class="py-3.5 px-4 font-semibold">Alat</th>
                         <th class="py-3.5 px-4 font-semibold">Tanggal Kembali</th>
-                        <th class="py-3.5 px-4 font-semibold">Kondisi Alat</th>
-                        <th class="py-3.5 px-4 font-semibold">Denda</th>
-                        <th class="py-3.5 px-4 font-semibold">Petugas Penerima</th>
+                        <th class="py-3.5 px-4 font-semibold">Status</th>
+                        <th class="py-3.5 px-4 font-semibold">Kondisi Alat</th> 
+                        <th class="py-3.5 px-4 font-semibold">Aksi</th> 
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
@@ -29,7 +30,17 @@
                                 {{ $item->peminjaman->user->name ?? '-' }}
                             </td>
                             <td class="py-3.5 px-4 text-slate-600">
+                                {{ $detail->alat->nama_alat ?? '-' }}
+                            </td>
+                            <td class="py-3.5 px-4 text-slate-600">
                                 {{ $item->tgl_kembali_real ?? $item->created_at->format('Y-m-d H:i') }}
+                            </td>
+                            <td class="py-3.5 px-4 text-slate-600">
+                               @if($item->status === 'telat')
+                                    <span class="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-800">Terlambat</span>
+                                @else
+                                    <span class="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800">Dipinjam</span>
+                                @endif
                             </td>
                             <td class="py-3.5 px-4">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item->kondisi_kembali == 'Baik' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-rose-50 text-rose-700 border border-rose-200/60' }}">
@@ -37,10 +48,7 @@
                                 </span>
                             </td>
                             <td class="py-3.5 px-4 font-medium text-slate-800">
-                                Rp {{ number_format($item->denda ?? 0, 0, ',', '.') }}
-                            </td>
-                            <td class="py-3.5 px-4 text-slate-600">
-                                {{ $item->petugas->name ?? 'Petugas' }}
+                                <a href="{{ route('admin.pengembalian.create', $item->id) }}" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700">Proses Pengembalian</a>
                             </td>
                         </tr>
                     @empty

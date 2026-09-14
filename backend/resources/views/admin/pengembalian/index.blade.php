@@ -24,7 +24,7 @@
                         <th class="border-b px-4 py-3">Peminjam</th>
                         <th class="border-b px-4 py-3">Alat</th>
                         <th class="border-b px-4 py-3">Tanggal Pinjam</th>
-                        <th class="border-b px-4 py-3">Rencana Kembali</th>
+                        <th class="border-b px-4 py-3">Tanggal Kembali</th>
                         <th class="border-b px-4 py-3">Status</th>
                         <th class="border-b px-4 py-3 text-center">Aksi</th>
                     </tr>
