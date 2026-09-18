@@ -8,6 +8,7 @@ use App\Models\Kategori;
 use App\Models\User;
 use App\Models\Peminjaman;
 use App\Models\DetailPinjam;
+use App\Models\Pengembalian;
 use Illuminate\Support\Facades\DB;
 use App\Models\LogAktivitas;
 use Illuminate\Http\Request;
@@ -442,7 +443,7 @@ class AdminController extends Controller
     }
 
     // 7. Proses Pengembalian
-    public function kembalikan($id)
+    public function kembalikan(Request $request, $id)
     {
         $peminjaman = Peminjaman::with('detailPinjam.alat')->findOrFail($id);
 
@@ -450,13 +451,21 @@ class AdminController extends Controller
             return back()->with('error', 'Peminjaman ini sudah dikembalikan.');
         }
 
+        $request->validate([
+            'kondisi_kembali' => 'required|string|max:255',
+            'denda_kerusakan' => 'nullable|integer|min:0',
+        ]);
+
         DB::beginTransaction();
         try {
             $tanggalRencana = Carbon::parse($peminjaman->tgl_kembali_plan);
             $tanggalKembali = Carbon::today();
 
             $hariTerlambat = $tanggalKembali->gt($tanggalRencana) ? $tanggalRencana->diffInDays($tanggalKembali) : 0;
-            $denda = $hariTerlambat * 5000; 
+            $denda = $hariTerlambat * 5000;
+            $dendaKerusakan = $request->denda_kerusakan ?? 0;
+
+            $totalDenda = $denda + $dendaKerusakan;
 
             foreach ($peminjaman->detailPinjam as $detail) {
                 if ($detail->alat) {
@@ -464,9 +473,16 @@ class AdminController extends Controller
                 }
             }
 
+            Pengembalian::create([
+                'peminjaman_id' => $peminjaman->id,
+                'tgl_kembali' => $tanggalKembali,
+                'kondisi_kembali' => $request->kondisi_kembali,
+                'denda' => $totalDenda,
+                'petugas_id' => auth()->id(),
+            ]);
+
             $peminjaman->update([
                 'status' => 'dikembalikan',
-                'denda'  => $denda,
             ]);
 
             DB::commit();

@@ -11,8 +11,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('peminjaman_id')->constrained('peminjaman')->cascadeOnDelete();
             $table->date('tgl_kembali');
-            $table->string('kondisi_Kembali');
-            $table->string('denda')->nullable()->default(0);
+            $table->string('kondisi_kembali');
+            $table->string('denda')->default(0);
             $table->foreignId('petugas_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });
