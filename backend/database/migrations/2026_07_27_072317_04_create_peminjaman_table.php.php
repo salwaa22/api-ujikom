@@ -10,8 +10,8 @@ return new class extends Migration
         Schema::create('peminjaman', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->date('tgl_pinjam');
-            $table->date('tgl_kembali_plan');
+            $table->dateTime('tgl_pinjam');
+            $table->dateTime('tgl_kembali_plan');
             $table->enum('status', ['diajukan', 'dipinjam', 'dikembalikan', 'telat'])->default('diajukan');
             $table->timestamps();
         });

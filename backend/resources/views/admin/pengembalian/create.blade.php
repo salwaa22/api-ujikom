@@ -14,6 +14,14 @@
         </div>
     @endif
 
+    @if($errors->any())
+        <div class="mb-4 bg-red-50 border border-red-200 text-red-800 p-3 rounded-lg text-sm">
+            @foreach($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
+
     <div class="mb-6">
         <h2 class="text-lg font-bold text-gray-800">
             Konfirmasi Pengembalian
@@ -203,6 +211,22 @@
             @csrf
             @method('PUT')
 
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-semibold mb-2">
+                    Kondisi Saat Dikembalikan
+                </label>
+
+                <select name="kondisi_kembali" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+
+                    <option value="">-- Pilih Kondisi --</option>
+                    <option value="Baik">Baik</option>
+                    <option value="Rusak Ringan">Rusak Ringan</option>
+                    <option value="Rusak Berat">Rusak Berat</option>
+                    <option value="Tidak Lengkap">Tidak Lengkap</option>
+
+                </select>
+            </div>
+
             <div class="mb-6">
                 <label class="block text-gray-700 text-sm font-semibold mb-2">
                     Denda Kerusakan
@@ -214,8 +238,9 @@
                     id="denda_kerusakan"
                     min="0"
                     value="0"
-                    class="w-full px-3 py- border border-gray-300 rounded-lg text-sm"
-                    placeholder="Masukkan denda kerusakan">
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    placeholder="Masukkan denda kerusakan"
+                    oninput="hitungTotalDenda(this.value)">
 
                 <p class="text-xs text-gray-500 mt-1">
                     Isi 0 jika tidak ada kerusakan.
@@ -238,34 +263,28 @@
 
                 <a href="{{ route('admin.pengembalian.index') }}"
                     class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg text-sm font-semibold transition">
-
                     Batal
-
                 </a>
 
             <button
                 type="submit"
                 class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
-
                 Konfirmasi Pengembalian
-
             </button>
         </div>
 </form>
 </div>
 
-@endsection
-
 <script>
-    const dendaKerusakan = document.getElementById('denda_kerusakan');
-    const totalDenda = document.getElementById('total_denda');
+    function hitungTotalDenda(nilaiKerusakan) {
+        const dendaKeterlambatan = {{ $totalDenda }};
+        const dendaKerusakan = parseInt(nilaiKerusakan) || 0;
 
-    const dendaKeterlambatan = {{ $totalDenda }};
+        const total = dendaKeterlambatan + dendaKerusakan;
 
-    dendaKerusakan.addEventListener('input', function () {
-        const kerusakan = parseInt(this.value) || 0;
-        const total = dendaKeterlambatan + kerusakan;
-
-        totalDenda.textContent = 'Rp ' + total.toLocaleString('id-ID');
-    });
+        document.getElementById('total_denda').textContent =
+            'Rp ' + total.toLocaleString('id-ID');
+    }
 </script>
+
+@endsection

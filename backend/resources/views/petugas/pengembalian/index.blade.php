@@ -30,7 +30,14 @@
                                 {{ $item->peminjaman->user->name ?? '-' }}
                             </td>
                             <td class="py-3.5 px-4 text-slate-600">
-                                {{ $detail->alat->nama_alat ?? '-' }}
+                                @foreach($item->peminjaman->detailPinjam as $detail)
+                                    <div>
+                                        {{ $detail->alat->nama_alat ?? '-' }}
+                                        <span class="text-xs text-slate-400">
+                                            ({{ $detail->jumlah }} pcs)
+                                        </span>
+                                    </div>
+                                @endforeach
                             </td>
                             <td class="py-3.5 px-4 text-slate-600">
                                 {{ $item->tgl_kembali_real ?? $item->created_at->format('Y-m-d H:i') }}

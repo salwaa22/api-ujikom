@@ -457,15 +457,19 @@ class AdminController extends Controller
         ]);
 
         DB::beginTransaction();
+
         try {
             $tanggalRencana = Carbon::parse($peminjaman->tgl_kembali_plan);
             $tanggalKembali = Carbon::today();
 
             $hariTerlambat = $tanggalKembali->gt($tanggalRencana) ? $tanggalRencana->diffInDays($tanggalKembali) : 0;
-            $denda = $hariTerlambat * 5000;
-            $dendaKerusakan = $request->denda_kerusakan ?? 0;
 
-            $totalDenda = $denda + $dendaKerusakan;
+            //Denda Keterlambatan Rp.5.000 per hari
+            $dendaKeterlambatan = $hariTerlambat * 5000;
+            //Denda Kerusakan diisi manual
+            $dendaKerusakan = $request->denda_kerusakan ?? 0;
+            // Total denda
+            $totalDenda = $dendaKeterlambatan + $dendaKerusakan;
 
             foreach ($peminjaman->detailPinjam as $detail) {
                 if ($detail->alat) {
@@ -486,11 +490,16 @@ class AdminController extends Controller
             ]);
 
             DB::commit();
+
             return redirect()->route('admin.pengembalian.index')
                 ->with('success', 'Pengembalian berhasil. Stok alat dikembalikan.');
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Pengembalian gagal: ' . $e->getMessage());
+
+            return back()
+            ->withInput()
+            ->with('error', 'Pengembalian gagal: ' . $e->getMessage());
         }
     }
 
