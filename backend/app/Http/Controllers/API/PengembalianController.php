@@ -7,7 +7,8 @@ use App\Http\Requests\Pengembalian\StorePengembalianRequest;
 use App\Models\Alat; 
 use App\Models\Peminjaman; use App\Models\Pengembalian; 
 use Carbon\Carbon; 
-use Illuminate\Http\JsonResponse; 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request; 
 use Illuminate\Support\Facades\DB; 
 use Exception; 
  
@@ -109,8 +110,22 @@ class PengembalianController extends Controller {
         } catch (Exception $e) { 
             // Tangkap pesan error dari throw exception di atas (misal status bukan 'dipinjam') 
             return response()->json(['message' => $e->getMessage()], 422);
-        } 
-    } 
+        }
+    }
+    
+    public function update(Request $request, Pengembalian $pengembalian): JsonResponse
+    {
+        // Mengamankan data dengan membatasi field yang boleh dikoreksi petugas
+        $pengembalian->update([
+            'kondisi_kembali' => $request->kondisi_kembali,
+            'denda' => $request->denda ?? $pengembalian->denda,
+        ]);
+
+        return response()->json([
+            'message' => 'Data pengembalian berhasil diperbarui.',
+            'data' => $pengembalian->load(['peminjaman.user', 'petugas'])
+        ]);
+    }
 
     public function destroy(Pengembalian $pengembalian): JsonResponse 
     { 

@@ -75,11 +75,13 @@ Route::middleware(['auth', 'role:petugas,admin'])->prefix('petugas')->name('petu
     Route::post('/peminjaman/{id}/tolak', [PetugasController::class, 'tolakPeminjaman'])->name('peminjaman.tolak');
 
     Route::get('/pengembalian', [PetugasController::class, 'indexPengembalian'])->name('pengembalian.index');
-    Route::post('/pengembalian/{id}/proses', [PetugasController::class, 'prosesPengembalian'])->name('pengembalian.proses');
 
-    // TAMBAHKAN ROUTE LAPORAN INI
+    Route::get('/pengembalian/{id}/create', [PetugasController::class, 'createPengembalian'])
+        ->name('pengembalian.create');
+    Route::put('/pengembalian/{id}/proses', [PetugasController::class, 'prosesPengembalian'])
+    ->name('pengembalian.proses');
+
     Route::get('/laporan', [PetugasController::class, 'indexLaporan'])->name('laporan.index');
-
 });
 
 //peminjam
