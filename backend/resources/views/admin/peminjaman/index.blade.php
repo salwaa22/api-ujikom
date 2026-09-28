@@ -71,8 +71,8 @@
                                 </ul>
                             </td>
                             <td class="py-3 px-4 border-b text-xs text-gray-600">
-                                <span class="block">Pinjam: {{ $item->tgl_pinjam }}</span>
-                                <span class="block font-semibold">Rencana: {{ $item->tgl_kembali_plan }}</span>
+                                <span class="block">Pinjam: {{ $item->tgl_pinjam?->format('d-m-Y H:i') }}</span>
+                                <span class="block font-semibold">Rencana: {{ $item->tgl_kembali_plan?->format('d-m-Y H:i') }}</span>
                             </td>
                             <td class="py-3 px-4 border-b">
                                 <span class="px-2.5 py-1 text-xs font-semibold rounded-full

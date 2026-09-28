@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Peminjaman;
 use App\Models\Pengembalian;
 use App\Models\Alat;
+use App\Models\LogAktivitas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -35,6 +36,11 @@ class PetugasController extends Controller
         try {
             $peminjaman = Peminjaman::with('detailPinjam')->findOrFail($id);
             $peminjaman->update(['status' => 'dipinjam']);
+
+            LogAktivitas::create([
+                'user_id' => auth()->id(),
+                'aktivitas' => 'Menyetujui peminjaman ID #' . $peminjaman->id . '.',
+            ]);
 
             // Kurangi stok alat secara otomatis
             foreach ($peminjaman->detailPinjam as $detail) {
@@ -71,6 +77,11 @@ class PetugasController extends Controller
         }
         
         $peminjaman->delete();
+
+        LogAktivitas::create([
+            'user_id' => auth()->id(),
+            'aktivitas' => 'Menolak peminjaman ID #' . $peminjaman->id . '.',
+        ]);
 
         return redirect()->back()->with('success', 'Peminjaman berhasil ditolak.');
     }
@@ -124,6 +135,11 @@ class PetugasController extends Controller
                 'kondisi_kembali' => $request->kondisi_kembali,
                 'denda' => $totalDenda,
                 'petugas_id' => auth()->id(),
+            ]);
+
+            LogAktivitas::create([
+                'user_id' => auth()->id(),
+                'aktivitas' => 'Memproses pengembalian peminjaman ID #' . $peminjaman->id . ' dengan kondisi: ' . $request->kondisi_kembali . '.',
             ]);
 
             // Update status peminjaman jadi selesai

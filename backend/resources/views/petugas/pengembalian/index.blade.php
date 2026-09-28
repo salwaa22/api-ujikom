@@ -72,7 +72,7 @@
                                 @endif
                             </td>
                             <td class="py-3.5 px-4">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item->kondisi_kembali == 'Baik' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-rose-50 text-rose-700 border border-rose-200/60' }}">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60">
                                     {{ $item->kondisi_kembali ?? 'Baik' }}
                                 </span>
                             </td>

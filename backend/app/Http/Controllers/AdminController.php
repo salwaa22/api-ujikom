@@ -37,7 +37,7 @@ class AdminController extends Controller
                     });
             })
             ->latest()
-            ->paginate(10)
+            ->paginate(5)
             ->withQueryString();
 
         return view('admin.alat.index', compact('alat', 'search'));
@@ -72,7 +72,12 @@ class AdminController extends Controller
             $data['gambar'] = 'storage/alat/' . $filename;
         }
 
-        Alat::create($data);
+        $alat = Alat::create($data);
+
+        LogAktivitas::create([
+            'user_id' => auth()->id(),
+            'aktivitas' => 'Menambahkan alat baru: ' . $alat->nama_alat,
+        ]);
 
         return redirect()->route('admin.alat.index')->with('success', 'Data alat berhasil ditambahkan.');
     }
@@ -116,6 +121,11 @@ class AdminController extends Controller
 
         $alat->update($data);
 
+        LogAktivitas::create([
+            'user_id' => auth()->id(),
+            'aktivitas' => 'Mengubah data alat: ' . $alat->nama_alat,
+        ]);
+
         return redirect()->route('admin.alat.index')->with('success', 'Data alat berhasil diperbarui.');
     }
 
@@ -123,6 +133,7 @@ class AdminController extends Controller
     public function destroyAlat($id)
     {
         $alat = Alat::findOrFail($id);
+        $namaAlat = $alat->nama_alat;
 
         // Hapus file gambar fisik jika ada
         if ($alat->gambar && file_exists(public_path($alat->gambar))) {
@@ -130,6 +141,11 @@ class AdminController extends Controller
         }
 
         $alat->delete();
+
+        LogAktivitas::create([
+            'user_id' => auth()->id(),
+            'aktivitas' => 'Menghapus alat: ' . $namaAlat,
+        ]);
 
         return redirect()->route('admin.alat.index')->with('success', 'Data alat berhasil dihapus.');
     }
@@ -145,7 +161,7 @@ class AdminController extends Controller
                 ->orWhere('role', 'like', "%{$search}%");
         })
             ->latest()
-            ->paginate(10)
+            ->paginate(5)
             ->withQueryString();
 
         return view('admin.user.index', compact('users', 'search'));
@@ -167,12 +183,17 @@ class AdminController extends Controller
             'no_hp' => 'nullable|string|max:20',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
             'no_hp' => $request->no_hp,
+        ]);
+
+        LogAktivitas::create([
+            'user_id' => auth()->id(),
+            'aktivitas' => 'Menambahkan user baru: ' . $user->name,
         ]);
 
         return redirect()->route('admin.user.index')->with('success', 'User berhasil ditambahkan.');
@@ -209,6 +230,11 @@ class AdminController extends Controller
 
         $user->update($data);
 
+        LogAktivitas::create([
+            'user_id' => auth()->id(),
+            'aktivitas' => 'Mengubah data user: ' . $user->name,
+        ]);
+
         return redirect()->route('admin.user.index')->with('success', 'Data user berhasil diperbarui.');
     }
 
@@ -217,6 +243,13 @@ class AdminController extends Controller
     {
         $user = User::findOrFail($id);
         $user->delete();
+
+        $namaUser = $user->name;
+
+        LogAktivitas::create([
+            'user_id' => auth()->id(),
+            'aktivitas' => 'Menghapus user: ' . $namaUser,
+        ]);
 
         return redirect()->route('admin.user.index')->with('success', 'User berhasil dihapus.');
     }
@@ -249,8 +282,13 @@ class AdminController extends Controller
             'nama_kategori' => 'required|string|max:255|unique:kategori,nama_kategori',
         ]);
 
-        Kategori::create([
+        $kategori = Kategori::create([
             'nama_kategori' => $request->nama_kategori,
+        ]);
+
+        LogAktivitas::create([
+            'user_id' => auth()->id(),
+            'aktivitas' => 'Menambahkan kategori baru: ' . $kategori->nama_kategori,
         ]);
 
         return redirect()->route('admin.kategori.index')->with('success', 'Kategori berhasil ditambahkan.');
@@ -276,6 +314,11 @@ class AdminController extends Controller
             'nama_kategori' => $request->nama_kategori,
         ]);
 
+        LogAktivitas::create([
+            'user_id' => auth()->id(),
+            'aktivitas' => 'Mengubah kategori: ' . $kategori->nama_kategori,
+        ]);
+
         return redirect()->route('admin.kategori.index')->with('success', 'Kategori berhasil diperbarui.');
     }
 
@@ -289,7 +332,14 @@ class AdminController extends Controller
                 ->with('error', 'Kategori tidak dapat dihapus karena masih digunakan oleh data alat.');
         }
 
+        $namaKategori = $kategori->nama_kategori;
+
         $kategori->delete();
+
+        LogAktivitas::create([
+            'user_id' => auth()->id(),
+            'aktivitas' => 'Menghapus kategori: ' . $namaKategori,
+        ]);
 
         return redirect()->route('admin.kategori.index')->with('success', 'Kategori berhasil dihapus.');
     }
@@ -306,7 +356,7 @@ class AdminController extends Controller
                     });
             })
             ->latest()
-            ->paginate(10)
+            ->paginate(5)
             ->withQueryString();
 
         return view('admin.peminjaman.index', compact('peminjaman', 'search'));
@@ -358,10 +408,17 @@ class AdminController extends Controller
                 ]);
             }
 
+            LogAktivitas::create([
+                'user_id' => auth()->id(),
+                'aktivitas' => 'Menambahkan peminjaman baru ID #' . $peminjaman->id . '.',
+            ]);
+
             DB::commit();
+
             return redirect()->route('admin.peminjaman.index')->with('success', 'Data peminjaman berhasil diajukan.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->withInput()->with('error', $e->getMessage());
         }
     }
@@ -396,10 +453,18 @@ class AdminController extends Controller
 
             $peminjaman->update(['status' => $statusBaru]);
 
+            LogAktivitas::create([
+                'user_id' => auth()->id(),
+                'aktivitas' => 'Mengubah status peminjaman ID #' . $peminjaman->id .
+                    ' dari ' . $statusLama . ' menjadi ' . $statusBaru . '.',
+            ]);
+
             DB::commit();
+
             return redirect()->route('admin.peminjaman.index')->with('success', 'Status peminjaman berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->with('error', $e->getMessage());
         }
     }
@@ -419,6 +484,11 @@ class AdminController extends Controller
 
         $peminjaman->delete();
 
+        LogAktivitas::create([
+            'user_id' => auth()->id(),
+            'aktivitas' => 'Menghapus peminjaman ID #' . $idPeminjaman . '.',
+        ]);
+
         return redirect()->route('admin.peminjaman.index')->with('success', 'Data peminjaman berhasil dihapus.');
     }
 
@@ -428,7 +498,7 @@ class AdminController extends Controller
         $peminjaman = Peminjaman::with(['user', 'detailPinjam.alat'])
             ->whereIn('status', ['dipinjam', 'telat'])
             ->latest()
-            ->get();
+            ->paginate(5);
 
         foreach ($peminjaman as $pinjam) {
             if (
@@ -487,6 +557,17 @@ class AdminController extends Controller
 
             $peminjaman->update([
                 'status' => 'dikembalikan',
+            ]);
+            
+            LogAktivitas::create([
+                'user_id' => auth()->id(),
+                'aktivitas' => 'Memproses pengembalian peminjaman ID #' .
+                    $peminjaman->id .
+                    ' dengan kondisi: ' .
+                    $request->kondisi_kembali .
+                    ' dan total denda: Rp' .
+                    number_format($totalDenda, 0, ',', '.') .
+                    '.',
             ]);
 
             DB::commit();
