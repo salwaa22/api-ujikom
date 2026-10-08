@@ -12,7 +12,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->dateTime('tgl_pinjam');
             $table->dateTime('tgl_kembali_plan');
-            $table->enum('status', ['diajukan', 'dipinjam', 'dikembalikan', 'telat'])->default('diajukan');
+            $table->enum('status', ['diajukan', 'dipinjam', 'telat', 'menunggu_pengembalian', 'dikembalikan'])->default('diajukan');
             $table->timestamps();
         });
     }

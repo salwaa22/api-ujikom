@@ -124,10 +124,13 @@
         }
 
         $dendaPerHari = 5000;
-        $totalDenda = $hariTerlambat * $dendaPerHari;
 
-        $dendaKerusakan = 0;
-        $totalDendaAkhir = $totalDenda + $dendaKerusakan;
+        $totalJumlahBarang = $peminjaman->detailPinjam->sum('jumlah');
+
+        $dendaKeterlambatan =
+            $hariTerlambat *
+            $totalJumlahBarang *
+            $dendaPerHari;
 
     @endphp
 
@@ -172,14 +175,14 @@
             <div class="flex justify-between text-sm mb-2">
                 <span class="text-gray-600">Denda Keterlambatan</span>
                 <span class="font-semibold text-gray-800">
-                    Rp {{ number_format($totalDenda, 0, ',', '.') }}
+                    Rp {{ number_format($dendaKeterlambatan, 0, ',', '.') }}
                 </span>
             </div>
 
             <div class="flex justify-between text-sm">
                 <span class="text-gray-600">Denda Kerusakan</span>
-                <span class="font-semibold text-gray-800">
-                    Diisi manual
+                <span id="total_denda_kerusakan" class="font-semibold text-gray-800">
+                    Rp 0
                 </span>
             </div>
 
@@ -211,20 +214,109 @@
             @csrf
             @method('PUT')
 
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-semibold mb-2">
-                    Kondisi Saat Dikembalikan
+            <div class="mb-6">
+
+                <label class="block text-gray-700 text-sm font-semibold mb-3">
+                    Kondisi Alat Saat Dikembalikan
                 </label>
 
-                <select name="kondisi_kembali" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                @foreach($peminjaman->detailPinjam as $detail)
 
-                    <option value="">-- Pilih Kondisi --</option>
-                    <option value="Baik">Baik</option>
-                    <option value="Rusak Ringan">Rusak Ringan</option>
-                    <option value="Rusak Berat">Rusak Berat</option>
-                    <option value="Tidak Lengkap">Tidak Lengkap</option>
+                    <div class="border border-gray-200 rounded-lg p-4 mb-4">
 
-                </select>
+                        <div class="mb-4">
+                            <div class="font-semibold text-gray-800">
+                                {{ $detail->alat->nama_alat ?? 'Alat Dihapus' }}
+                            </div>
+
+                            <div class="text-xs text-gray-500">
+                                Jumlah dipinjam: {{ $detail->jumlah }} pcs
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">
+                                    Baik
+                                </label>
+
+                                <input
+                                    type="number"
+                                    name="barang[{{ $detail->alat_id }}][baik]"
+                                    min="0"
+                                    max="{{ $detail->jumlah }}"
+                                    value="{{ $detail->jumlah }}"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">
+                                    Rusak Ringan
+                                </label>
+
+                                <input
+                                    type="number"
+                                    name="barang[{{ $detail->alat_id }}][rusak_ringan]"
+                                    min="0"
+                                    max="{{ $detail->jumlah }}"
+                                    value="0"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">
+                                    Rusak Berat
+                                </label>
+
+                                <input
+                                    type="number"
+                                    name="barang[{{ $detail->alat_id }}][rusak_berat]"
+                                    min="0"
+                                    max="{{ $detail->jumlah }}"
+                                    value="0"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">
+                                    Tidak Lengkap
+                                </label>
+
+                                <input
+                                    type="number"
+                                    name="barang[{{ $detail->alat_id }}][tidak_lengkap]"
+                                    min="0"
+                                    max="{{ $detail->jumlah }}"
+                                    value="0"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            </div>
+
+                        </div>
+
+                        <div class="mt-4">
+
+                            <label class="block text-sm text-gray-600 mb-1">
+                                Denda Kerusakan
+                            </label>
+
+                            <input
+                                type="number"
+                                name="barang[{{ $detail->alat_id }}][denda]"
+                                min="0"
+                                value="0"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm denda-barang">
+
+                            <p class="text-xs text-gray-500 mt-1">
+                                Isi manual jika alat mengalami kerusakan.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                @endforeach
+
             </div>
 
             <div class="mb-6">
@@ -248,15 +340,39 @@
             </div>
 
             <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div class="flex justify-between items-center">
+
+                <div class="flex justify-between items-center mb-2">
                     <span class="text-gray-700 font-semibold">
-                        Total Denda
+                        Denda Keterlambatan
                     </span>
 
-                    <span id="total_denda" class="text-lg font-bold text-blue-600">
-                        Rp {{ number_format($totalDenda, 0, ',', '.') }}
+                    <span class="font-semibold text-gray-800">
+                        Rp {{ number_format($dendaKeterlambatan, 0, ',', '.') }}
                     </span>
                 </div>
+
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-700 font-semibold">
+                        Denda Kerusakan
+                    </span>
+
+                    <span id="total_denda_kerusakan" class="font-semibold text-gray-800">
+                        Rp 0
+                    </span>
+                </div>
+
+                <div class="border-t border-blue-200 pt-2 mt-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-700 font-bold">
+                            Total Denda
+                        </span>
+
+                        <span id="total_denda" class="text-lg font-bold text-blue-600">
+                            Rp {{ number_format($dendaKeterlambatan, 0, ',', '.') }}
+                        </span>
+                    </div>
+                </div>
+
             </div>
 
             <div class="flex justify-end space-x-2">
@@ -276,15 +392,27 @@
 </div>
 
 <script>
-    function hitungTotalDenda(nilaiKerusakan) {
-        const dendaKeterlambatan = {{ $totalDenda }};
-        const dendaKerusakan = parseInt(nilaiKerusakan) || 0;
+    function hitungTotalDenda() {
+        const dendaKeterlambatan = {{ $dendaKeterlambatan }};
+
+        let dendaKerusakan = 0;
+
+        document.querySelectorAll('.denda-barang').forEach(input => {
+            dendaKerusakan += parseInt(input.value) || 0;
+        });
 
         const total = dendaKeterlambatan + dendaKerusakan;
+
+        document.getElementById('total_denda_kerusakan').textContent =
+            'Rp ' + dendaKerusakan.toLocaleString('id-ID');
 
         document.getElementById('total_denda').textContent =
             'Rp ' + total.toLocaleString('id-ID');
     }
+
+    document.querySelectorAll('.denda-barang').forEach(input => {
+        input.addEventListener('input', hitungTotalDenda);
+    });
 </script>
 
 @endsection

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Peminjaman;
 use App\Models\DetailPinjam;
 use App\Models\Pengembalian;
+use App\Models\DetailPengembalian;
 use Illuminate\Support\Facades\DB;
 use App\Models\LogAktivitas;
 use Illuminate\Http\Request;
@@ -495,10 +496,18 @@ class AdminController extends Controller
     // 6. Menampilkan daftar pengembalian
     public function indexPengembalian()
     {
-        $peminjaman = Peminjaman::with(['user', 'detailPinjam.alat'])
-            ->whereIn('status', ['dipinjam', 'telat'])
-            ->latest()
-            ->paginate(5);
+        $peminjaman = Peminjaman::with([
+            'user',
+            'detailPinjam.alat',
+            'pengembalian'
+        ])
+        ->whereIn('status', [
+            'dipinjam',
+            'telat',
+            'menunggu_pengembalian'
+        ])
+        ->latest()
+        ->paginate(5);
 
         foreach ($peminjaman as $pinjam) {
             if (
@@ -515,82 +524,151 @@ class AdminController extends Controller
     // 7. Proses Pengembalian
     public function kembalikan(Request $request, $id)
     {
-        $peminjaman = Peminjaman::with('detailPinjam.alat')->findOrFail($id);
-
-        if (!in_array($peminjaman->status, ['dipinjam', 'telat'])) {
-            return back()->with('error', 'Peminjaman ini sudah dikembalikan.');
-        }
-
         $request->validate([
-            'kondisi_kembali' => 'required|string|max:255',
-            'denda_kerusakan' => 'nullable|integer|min:0',
+            'barang' => 'required|array',
+            'barang.*.baik' => 'required|integer|min:0',
+            'barang.*.rusak_ringan' => 'required|integer|min:0',
+            'barang.*.rusak_berat' => 'required|integer|min:0',
+            'barang.*.tidak_lengkap' => 'required|integer|min:0',
+            'barang.*.denda' => 'nullable|integer|min:0',
         ]);
 
         DB::beginTransaction();
 
         try {
+            $peminjaman = Peminjaman::with('detailPinjam.alat')->findOrFail($id);
+
+            if ($peminjaman->status !== 'menunggu_pengembalian') {
+                DB::rollback();
+
+                return back()->with(
+                    'error',
+                    'Peminjam belum mengajukan pengembalian.'
+                );
+            }
+
+            // Hitung keterlambatan
             $tanggalRencana = Carbon::parse($peminjaman->tgl_kembali_plan);
             $tanggalKembali = Carbon::today();
 
-            $hariTerlambat = $tanggalKembali->gt($tanggalRencana) ? $tanggalRencana->diffInDays($tanggalKembali) : 0;
+            if ($tanggalKembali->gt($tanggalRencana)) {
+                $hariTerlambat = $tanggalRencana->diffInDays($tanggalKembali);
+            } else {
+                $hariTerlambat = 0;
+            }
 
-            //Denda Keterlambatan Rp.5.000 per hari
-            $dendaKeterlambatan = $hariTerlambat * 5000;
-            //Denda Kerusakan diisi manual
-            $dendaKerusakan = $request->denda_kerusakan ?? 0;
-            // Total denda
+            // Denda Rp5.000 per barang per hari
+            $dendaPerHari = 5000;
+
+            $totalJumlahBarang = $peminjaman->detailPinjam->sum('jumlah');
+
+            $dendaKeterlambatan =
+                $hariTerlambat *
+                $totalJumlahBarang *
+                $dendaPerHari;
+
+            $dendaKerusakan = 0;
+
+            // Simpan pengembalian
+            $pengembalian = Pengembalian::create([
+                'peminjaman_id' => $peminjaman->id,
+                'tgl_kembali' => $tanggalKembali,
+                'kondisi_kembali' => 'Diperiksa',
+                'denda' => 0,
+                'petugas_id' => auth()->id(),
+            ]);
+
+            // Simpan kondisi masing-masing alat
+            foreach ($peminjaman->detailPinjam as $detail) {
+
+                $dataBarang = $request->barang[$detail->alat_id] ?? [];
+
+                $jumlahBaik = (int) ($dataBarang['baik'] ?? 0);
+                $jumlahRusakRingan = (int) ($dataBarang['rusak_ringan'] ?? 0);
+                $jumlahRusakBerat = (int) ($dataBarang['rusak_berat'] ?? 0);
+                $jumlahTidakLengkap = (int) ($dataBarang['tidak_lengkap'] ?? 0);
+                $dendaBarang = (int) ($dataBarang['denda'] ?? 0);
+
+                $totalKondisi =
+                    $jumlahBaik +
+                    $jumlahRusakRingan +
+                    $jumlahRusakBerat +
+                    $jumlahTidakLengkap;
+
+                if ($totalKondisi !== (int) $detail->jumlah) {
+                    throw new \Exception(
+                        "Jumlah kondisi {$detail->alat->nama_alat} tidak sesuai dengan jumlah yang dipinjam."
+                    );
+                }
+
+                DetailPengembalian::create([
+                    'pengembalian_id' => $pengembalian->id,
+                    'alat_id' => $detail->alat_id,
+                    'jumlah_baik' => $jumlahBaik,
+                    'jumlah_rusak_ringan' => $jumlahRusakRingan,
+                    'jumlah_rusak_berat' => $jumlahRusakBerat,
+                    'jumlah_tidak_lengkap' => $jumlahTidakLengkap,
+                    'denda_kerusakan' => $dendaBarang,
+                ]);
+
+                $dendaKerusakan += $dendaBarang;
+            }
+
+            // Total seluruh denda
             $totalDenda = $dendaKeterlambatan + $dendaKerusakan;
 
+            $pengembalian->update([
+                'denda' => $totalDenda,
+            ]);
+
+            // Status selesai
+            $peminjaman->update([
+                'status' => 'dikembalikan',
+            ]);
+
+            // Kembalikan stok
             foreach ($peminjaman->detailPinjam as $detail) {
                 if ($detail->alat) {
                     $detail->alat->increment('stok', $detail->jumlah);
                 }
             }
 
-            Pengembalian::create([
-                'peminjaman_id' => $peminjaman->id,
-                'tgl_kembali' => $tanggalKembali,
-                'kondisi_kembali' => $request->kondisi_kembali,
-                'denda' => $totalDenda,
-                'petugas_id' => auth()->id(),
-            ]);
-
-            $peminjaman->update([
-                'status' => 'dikembalikan',
-            ]);
-            
             LogAktivitas::create([
                 'user_id' => auth()->id(),
-                'aktivitas' => 'Memproses pengembalian peminjaman ID #' .
-                    $peminjaman->id .
-                    ' dengan kondisi: ' .
-                    $request->kondisi_kembali .
-                    ' dan total denda: Rp' .
-                    number_format($totalDenda, 0, ',', '.') .
-                    '.',
+                'aktivitas' =>
+                    'Memproses pengembalian peminjaman ID #' .
+                    $peminjaman->id . '.',
             ]);
 
             DB::commit();
 
-            return redirect()->route('admin.pengembalian.index')
+            return redirect()
+                ->route('admin.pengembalian.index')
                 ->with('success', 'Pengembalian berhasil. Stok alat dikembalikan.');
 
         } catch (\Exception $e) {
+
             DB::rollBack();
 
             return back()
-            ->withInput()
-            ->with('error', 'Pengembalian gagal: ' . $e->getMessage());
+                ->withInput()
+                ->with('error', 'Pengembalian gagal: ' . $e->getMessage());
         }
     }
 
     // 8. Form Pengembalian
     public function createPengembalian($id)
     {
-        $peminjaman = Peminjaman::with(['user', 'detailPinjam.alat'])->findOrFail($id);
+        $peminjaman = Peminjaman::with([
+            'user',
+            'detailPinjam.alat'
+        ])->findOrFail($id);
 
-        if (!in_array($peminjaman->status, ['dipinjam', 'telat'])) {
-            return back()->with('error', 'Peminjaman ini sudah selesai dikembalikan.');
+        if ($peminjaman->status !== 'menunggu_pengembalian') {
+            return back()->with(
+                'error',
+                'Peminjam belum mengajukan pengembalian.'
+            );
         }
 
         return view('admin.pengembalian.create', compact('peminjaman'));

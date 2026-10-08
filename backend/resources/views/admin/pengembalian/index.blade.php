@@ -27,7 +27,7 @@
                         <th class="border-b px-4 py-3">Tanggal Kembali</th>
                         <th class="border-b px-4 py-3">Status</th>
                         <th class="border-b px-4 py-3 text-center">Aksi</th>
-                    </tr>
+                    </tr>  
                 </thead>
                 <tbody class="text-sm text-gray-700">
                     @forelse($peminjaman as $item)
@@ -43,14 +43,56 @@
                             <td class="border-b px-4 py-4">{{ $item->tgl_pinjam }}</td>
                             <td class="border-b px-4 py-4 font-semibold">{{ $item->tgl_kembali_plan }}</td>
                             <td class="border-b px-4 py-4">
-                                @if($item->status === 'telat')
-                                    <span class="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-800">Terlambat</span>
+                                @if($item->status === 'menunggu_pengembalian')
+
+                                    <span class="rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-semibold text-yellow-800">
+                                        Menunggu Pengembalian
+                                    </span>
+
+                                @elseif($item->status === 'dikembalikan')
+
+                                    <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+                                        Selesai
+                                    </span>
+
+                                @elseif($item->status === 'telat')
+
+                                    <span class="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-800">
+                                        Terlambat
+                                    </span>
+
                                 @else
-                                    <span class="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800">Dipinjam</span>
+
+                                    <span class="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800">
+                                        Belum Mengajukan
+                                    </span>
+
                                 @endif
                             </td>
                             <td class="border-b px-4 py-4 text-center">
-                                <a href="{{ route('admin.pengembalian.create', $item->id) }}" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700">Proses Pengembalian</a>
+
+                                @if($item->status === 'menunggu_pengembalian')
+
+                                    <a
+                                        href="{{ route('admin.pengembalian.create', $item->id) }}"
+                                        class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700">
+                                        Proses Pengembalian
+                                    </a>
+
+                                @elseif($item->status === 'dikembalikan')
+
+                                    <span class="text-xs font-semibold text-emerald-600">
+                                        Selesai
+                                    </span>
+
+                                @else
+
+                                    <span class="text-xs font-semibold text-gray-500">
+                                        Menunggu Pengajuan
+                                    </span>
+
+                                @endif
+
                             </td>
                         </tr>
                     @empty

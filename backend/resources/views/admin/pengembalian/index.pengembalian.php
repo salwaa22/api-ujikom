@@ -85,7 +85,12 @@
                             : 0;
 
                         $dendaPerHari = 5000;
-                        $perkiraanDenda = $hariTerlambat * $dendaPerHari;
+                        $totalJumlahBarang = $pinjam->detailPinjam->sum('jumlah');
+
+                        $perkiraanDenda =
+                            $hariTerlambat *
+                            $totalJumlahBarang *
+                            $dendaPerHari;
                     @endphp
 
                     <tr class="hover:bg-indigo-50/30 transition align-top">
@@ -209,24 +214,38 @@
                         {{-- Aksi --}}
                         <td class="py-4 px-4 text-center">
 
-                            <form
-                                action="{{ route('admin.pengembalian.kembalikan', $pinjam->id) }}"
-                                method="POST"
-                                onsubmit="return confirm('Yakin alat ini sudah dikembalikan?')"
-                                class="inline-block"
-                            >
-                                @csrf
-                                @method('PUT')
+                            @if($pinjam->status === 'menunggu_pengembalian')
 
-                                <a href="{{ route('admin.pengembalian.create', $pinjam->id) }}"
+                                <a
+                                    href="{{ route('admin.pengembalian.create', $pinjam->id) }}"
                                     class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm shadow-indigo-600/25 transition inline-flex items-center gap-1.5">
+
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M5 13l4 4L19 7">
+                                        </path>
                                     </svg>
-                                    Kembalikan
+
+                                    Proses Pengembalian
+
                                 </a>
 
-                            </form>
+                            @elseif($pinjam->status === 'dikembalikan')
+
+                                <span class="text-xs font-semibold text-emerald-600">
+                                    Selesai
+                                </span>
+
+                            @else
+
+                                <span class="text-xs font-semibold text-slate-400">
+                                    Belum Mengajukan
+                                </span>
+
+                            @endif
 
                         </td>
 

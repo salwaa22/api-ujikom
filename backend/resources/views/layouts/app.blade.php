@@ -121,6 +121,53 @@
                             <span>Cetak Laporan</span>
                         </a>
 
+                    <!-- MENU KHUSUS PEMINJAM -->
+                    @elseif(auth()->check() && auth()->user()->role === 'peminjam')
+
+                        {{-- Dashboard --}}
+                        <a href="{{ route('peminjam.dashboard') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 hover:translate-x-1 {{ request()->routeIs('peminjam.dashboard') ? 'bg-slate-800/60 text-white border border-slate-700/50 shadow-sm' : 'text-slate-400 hover:bg-slate-800/40 hover:text-white' }}">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                                </path>
+                            </svg>
+                            <span>Dashboard</span>
+                        </a>
+
+                        {{-- Melihat Daftar Alat --}}
+                        <a href="{{ route('peminjam.katalog') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 hover:translate-x-1 {{ request()->routeIs('peminjam.katalog') ? 'bg-slate-800/60 text-white border border-slate-700/50 shadow-sm' : 'text-slate-400 hover:bg-slate-800/40 hover:text-white' }}">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 6h16M4 10h16M4 14h16M4 18h16">
+                                </path>
+                            </svg>
+                            <span>Melihat Daftar Alat</span>
+                        </a>
+
+                        {{-- Mengajukan Peminjaman --}}
+                        <a href="{{ route('peminjam.peminjaman') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 hover:translate-x-1 {{ request()->routeIs('peminjam.peminjaman*') ? 'bg-slate-800/60 text-white border border-slate-700/50 shadow-sm' : 'text-slate-400 hover:bg-slate-800/40 hover:text-white' }}">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-3-3v6m8-8v8a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h3l1-2h4l1 2h3a2 2 0 012 2z">
+                                </path>
+                            </svg>
+                            <span>Mengajukan Peminjaman</span>
+                        </a>
+
+                        {{-- Mengembalikan Alat --}}
+                        <a href="{{ route('peminjam.pengembalian') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 hover:translate-x-1 {{ request()->routeIs('peminjam.pengembalian*') ? 'bg-slate-800/60 text-white border border-slate-700/50 shadow-sm' : 'text-slate-400 hover:bg-slate-800/40 hover:text-white' }}">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M20 11a8 8 0 01-15.5 2M4 13V7m0 0h6M4 7l3 3m-3-3l-3 3">
+                                </path>
+                            </svg>
+                            <span>Mengembalikan Alat</span>
+                        </a>
+
                     @endif
 
                 </nav>

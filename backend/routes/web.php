@@ -49,9 +49,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/peminjaman/{id}/status', [AdminController::class, 'updateStatusPeminjaman'])->name('peminjaman.updateStatus');
     Route::delete('/peminjaman/{id}', [AdminController::class, 'destroyPeminjaman'])->name('peminjaman.destroy');
 
-    // ====================
+
     // KELOLA PENGEMBALIAN
-    // ====================
     Route::get('/pengembalian', [AdminController::class, 'indexPengembalian'])
         ->name('pengembalian.index');
     Route::get('/pengembalian/{id}/create', [AdminController::class, 'createPengembalian'])
@@ -86,11 +85,30 @@ Route::middleware(['auth', 'role:petugas,admin'])->prefix('petugas')->name('petu
 
 //peminjam
 Route::middleware(['auth', 'role:peminjam'])->prefix('peminjam')->name('peminjam.')->group(function () {
-    // Katalog & Pengajuan
-    Route::get('/katalog', [PeminjamController::class, 'katalogAlat'])->name('katalog');
-    Route::post('/peminjaman/ajukan', [PeminjamController::class, 'ajukanPeminjaman'])->name('peminjaman.ajukan');
-    Route::get('/riwayat', [PeminjamController::class, 'riwayatPeminjaman'])->name('riwayat');
-});
+        // Dashboard Peminjam
+        Route::get('/dashboard', [PeminjamController::class, 'dashboard'])
+            ->name('dashboard');
+
+        // Melihat Daftar Alat
+        Route::get('/alat', [PeminjamController::class, 'katalogAlat'])
+            ->name('katalog');
+
+        // Pengajuan Peminjaman
+        Route::get('/peminjaman', [PeminjamController::class, 'formPeminjaman'])
+            ->name('peminjaman');
+        Route::post('/peminjaman', [PeminjamController::class, 'ajukanPeminjaman'])
+            ->name('peminjaman.ajukan');
+
+        // Melihat peminjaman milik sendiri
+        Route::get('/peminjaman-saya', [PeminjamController::class, 'riwayatPeminjaman'])
+            ->name('peminjaman.saya');
+
+        // Mengembalikan Alat
+        Route::get('/pengembalian', [PeminjamController::class, 'pengembalian'])
+            ->name('pengembalian');
+        Route::post('/pengembalian/{id}/ajukan', [PeminjamController::class, 'ajukanPengembalian'])
+            ->name('pengembalian.ajukan');
+    });
 
 // Route Tamu (Belum Login)
 Route::middleware('guest')->group(function () {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Peminjaman;
 use App\Models\Pengembalian;
+use App\Models\DetailPengembalian;
 use App\Models\Alat;
 use App\Models\LogAktivitas;
 use Illuminate\Http\Request;
@@ -57,14 +58,16 @@ class PetugasController extends Controller
         }
     }
 
-    
-
     public function indexPengembalian()
     {
-        // Mengambil data pengembalian / peminjaman yang relevan
-        $pengembalian = Peminjaman::with(['user', 'detailPinjam.alat', 'pengembalian'])->latest()->get();
-    
-        // Kirim baik sebagai $pengembalian maupun $peminjaman agar view tidak error
+        $pengembalian = Peminjaman::with([
+            'user',
+            'detailPinjam.alat',
+            'pengembalian'
+        ])
+        ->latest()
+        ->get();
+
         return view('petugas.pengembalian.index', compact('pengembalian'));
     }
 
@@ -93,20 +96,38 @@ class PetugasController extends Controller
             'detailPinjam.alat'
         ])->findOrFail($id);
 
+        if ($peminjaman->status !== 'menunggu_pengembalian') {
+            return redirect()
+                ->back()
+                ->with('error', 'Peminjam belum mengajukan pengembalian.');
+        }
+
         return view('petugas.pengembalian.create', compact('peminjaman'));
     }
 
     public function prosesPengembalian(Request $request, $peminjamanId)
     {
         $request->validate([
-            'kondisi_kembali' => 'required|string',
-            'denda' => 'nullable|integer|min:0',
+            'barang' => 'required|array',
+            'barang.*.baik' => 'required|integer|min:0',
+            'barang.*.rusak_ringan' => 'required|integer|min:0',
+            'barang.*.rusak_berat' => 'required|integer|min:0',
+            'barang.*.tidak_lengkap' => 'required|integer|min:0',
+            'barang.*.denda' => 'nullable|integer|min:0',
         ]);
 
         DB::beginTransaction();
 
         try {
             $peminjaman = Peminjaman::with('detailPinjam')->findOrFail($peminjamanId);
+
+            if ($peminjaman->status !== 'menunggu_pengembalian') {
+                DB::rollback();
+
+                return redirect()
+                    ->back()
+                    ->with('error', 'Peminjam belum mengajukan pengembalian.');
+            }
 
             // Hitung keterlambatan
             $tanggalRencana = \Carbon\Carbon::parse($peminjaman->tgl_kembali_plan);
@@ -118,28 +139,73 @@ class PetugasController extends Controller
                 $hariTerlambat = 0;
             }
 
-            // Denda keterlambatan Rp5.000 per hari
-            $dendaPerHari = 5000;
-            $dendaKeterlambatan = $hariTerlambat * $dendaPerHari;
+           $dendaPerHari = 5000;
 
-            // Denda kerusakan diisi manual dari form
-            $dendaKerusakan = $request->denda_kerusakan ?? 0;
+            // Hitung total jumlah barang yang dipinjam
+            $totalJumlahBarang = $peminjaman->detailPinjam->sum('jumlah');
 
-            // Total denda
-            $totalDenda = $dendaKeterlambatan + $dendaKerusakan;
+            // Denda keterlambatan = hari terlambat × jumlah barang × Rp5.000
+            $dendaKeterlambatan = $hariTerlambat * $totalJumlahBarang * $dendaPerHari;
 
-            // Simpan data pengembalian
-            Pengembalian::create([
+            $dendaKerusakan = 0;
+
+            // Simpan data pengembalian terlebih dahulu
+            $pengembalian = Pengembalian::create([
                 'peminjaman_id' => $peminjaman->id,
                 'tgl_kembali' => now(),
-                'kondisi_kembali' => $request->kondisi_kembali,
-                'denda' => $totalDenda,
+                'kondisi_kembali' => 'Diperiksa',
+                'denda' => 0,
                 'petugas_id' => auth()->id(),
+            ]);
+
+            // Simpan kondisi setiap alat
+            foreach ($peminjaman->detailPinjam as $detail) {
+
+                $dataBarang = $request->barang[$detail->alat_id] ?? [];
+
+                $jumlahBaik = (int) ($dataBarang['baik'] ?? 0);
+                $jumlahRusakRingan = (int) ($dataBarang['rusak_ringan'] ?? 0);
+                $jumlahRusakBerat = (int) ($dataBarang['rusak_berat'] ?? 0);
+                $jumlahTidakLengkap = (int) ($dataBarang['tidak_lengkap'] ?? 0);
+                $dendaBarang = (int) ($dataBarang['denda'] ?? 0);
+
+                $totalKondisi =
+                    $jumlahBaik +
+                    $jumlahRusakRingan +
+                    $jumlahRusakBerat +
+                    $jumlahTidakLengkap;
+
+                // Jumlah kondisi harus sama dengan jumlah yang dipinjam
+                if ($totalKondisi !== (int) $detail->jumlah) {
+                    throw new \Exception(
+                        "Jumlah kondisi {$detail->alat->nama_alat} tidak sesuai dengan jumlah yang dipinjam."
+                    );
+                }
+
+                DetailPengembalian::create([
+                    'pengembalian_id' => $pengembalian->id,
+                    'alat_id' => $detail->alat_id,
+                    'jumlah_baik' => $jumlahBaik,
+                    'jumlah_rusak_ringan' => $jumlahRusakRingan,
+                    'jumlah_rusak_berat' => $jumlahRusakBerat,
+                    'jumlah_tidak_lengkap' => $jumlahTidakLengkap,
+                    'denda_kerusakan' => $dendaBarang,
+                ]);
+
+                $dendaKerusakan += $dendaBarang;
+            }
+
+            // Total seluruh denda
+            $totalDenda = $dendaKeterlambatan + $dendaKerusakan;
+
+            // Update total denda pada pengembalian
+            $pengembalian->update([
+                'denda' => $totalDenda,
             ]);
 
             LogAktivitas::create([
                 'user_id' => auth()->id(),
-                'aktivitas' => 'Memproses pengembalian peminjaman ID #' . $peminjaman->id . ' dengan kondisi: ' . $request->kondisi_kembali . '.',
+                'aktivitas' => 'Memproses pengembalian peminjaman ID #' . $peminjaman->id . '.',
             ]);
 
             // Update status peminjaman jadi selesai

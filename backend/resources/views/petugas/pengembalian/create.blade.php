@@ -76,6 +76,14 @@
 
     </div>
 
+    <form
+        action="{{ route('petugas.pengembalian.proses', $peminjaman->id) }}"
+        method="POST"
+        onsubmit="return confirm('Yakin ingin memproses pengembalian alat ini?')">
+
+        @csrf
+        @method('PUT')
+
     {{-- Alat --}}
     <div class="mb-4">
 
@@ -87,20 +95,98 @@
 
             @foreach($peminjaman->detailPinjam as $detail)
 
-                <div class="flex justify-between items-center px-4 py-3 border-b last:border-b-0">
+                <div class="px-4 py-4 border-b last:border-b-0">
 
-                    <div>
-                        <div class="font-semibold text-gray-800">
-                            {{ $detail->alat->nama_alat ?? 'Alat Dihapus' }}
+                    <div class="flex justify-between items-center mb-3">
+
+                        <div>
+                            <div class="font-semibold text-gray-800">
+                                {{ $detail->alat->nama_alat ?? 'Alat Dihapus' }}
+                            </div>
+
+                            <div class="text-xs text-gray-500">
+                                Jumlah dipinjam: {{ $detail->jumlah }} pcs
+                            </div>
                         </div>
 
-                        <div class="text-xs text-gray-500">
-                            Jumlah dipinjam: {{ $detail->jumlah }} pcs
+                        <div class="text-sm font-semibold text-gray-700">
+                            {{ $detail->jumlah }} pcs
                         </div>
+
                     </div>
 
-                    <div class="text-sm font-semibold text-gray-700">
-                        {{ $detail->jumlah }} pcs
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">
+                                Baik
+                            </label>
+
+                            <input
+                                type="number"
+                                name="barang[{{ $detail->alat_id }}][baik]"
+                                min="0"
+                                max="{{ $detail->jumlah }}"
+                                value="{{ $detail->jumlah }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">
+                                Rusak Ringan
+                            </label>
+
+                            <input
+                                type="number"
+                                name="barang[{{ $detail->alat_id }}][rusak_ringan]"
+                                min="0"
+                                max="{{ $detail->jumlah }}"
+                                value="0"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">
+                                Rusak Berat
+                            </label>
+
+                            <input
+                                type="number"
+                                name="barang[{{ $detail->alat_id }}][rusak_berat]"
+                                min="0"
+                                max="{{ $detail->jumlah }}"
+                                value="0"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">
+                                Tidak Lengkap
+                            </label>
+
+                            <input
+                                type="number"
+                                name="barang[{{ $detail->alat_id }}][tidak_lengkap]"
+                                min="0"
+                                max="{{ $detail->jumlah }}"
+                                value="0"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        </div>
+
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="block text-xs text-gray-600 mb-1">
+                            Denda Kerusakan
+                        </label>
+
+                        <input
+                            type="number"
+                            name="barang[{{ $detail->alat_id }}][denda]"
+                            min="0"
+                            value="0"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            placeholder="Masukkan denda untuk alat ini">
                     </div>
 
                 </div>
@@ -124,7 +210,9 @@
         }
 
         $dendaPerHari = 5000;
-        $totalDenda = $hariTerlambat * $dendaPerHari;
+        $totalJumlahBarang = $peminjaman->detailPinjam->sum('jumlah');
+
+        $totalDenda = $hariTerlambat * $totalJumlahBarang * $dendaPerHari;
 
         $dendaKerusakan = 0;
         $totalDendaAkhir = $totalDenda + $dendaKerusakan;
@@ -178,8 +266,8 @@
 
             <div class="flex justify-between text-sm">
                 <span class="text-gray-600">Denda Kerusakan</span>
-                <span class="font-semibold text-gray-800">
-                    Diisi manual
+                <span id="total_denda_kerusakan" class="font-semibold text-gray-800">
+                    Rp 0
                 </span>
             </div>
 
@@ -203,50 +291,6 @@
     </div>
 
     {{-- Tombol --}}
-        <form
-            action="{{ route('petugas.pengembalian.proses', $peminjaman->id) }}"
-            method="POST"
-            onsubmit="return confirm('Yakin ingin memproses pengembalian alat ini?')">
-
-            @csrf
-            @method('PUT')
-
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-semibold mb-2">
-                    Kondisi Saat Dikembalikan
-                </label>
-
-                <select name="kondisi_kembali" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-
-                    <option value="">-- Pilih Kondisi --</option>
-                    <option value="Baik">Baik</option>
-                    <option value="Rusak Ringan">Rusak Ringan</option>
-                    <option value="Rusak Berat">Rusak Berat</option>
-                    <option value="Tidak Lengkap">Tidak Lengkap</option>
-
-                </select>
-            </div>
-
-            <div class="mb-6">
-                <label class="block text-gray-700 text-sm font-semibold mb-2">
-                    Denda Kerusakan
-                </label>
-
-                <input
-                    type="number"
-                    name="denda_kerusakan"
-                    id="denda_kerusakan"
-                    min="0"
-                    value="0"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    placeholder="Masukkan denda kerusakan"
-                    oninput="hitungTotalDenda(this.value)">
-
-                <p class="text-xs text-gray-500 mt-1">
-                    Isi 0 jika tidak ada kerusakan.
-                </p>
-            </div>
-
             <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div class="flex justify-between items-center">
                     <span class="text-gray-700 font-semibold">
@@ -276,15 +320,26 @@
 </div>
 
 <script>
-    function hitungTotalDenda(nilaiKerusakan) {
+    function hitungTotalDenda() {
         const dendaKeterlambatan = {{ $totalDenda }};
-        const dendaKerusakan = parseInt(nilaiKerusakan) || 0;
+        let dendaKerusakan = 0;
+
+        document.querySelectorAll('input[name^="barang"][name$="[denda]"]').forEach(input => {
+            dendaKerusakan += parseInt(input.value) || 0;
+        });
 
         const total = dendaKeterlambatan + dendaKerusakan;
+
+        document.getElementById('total_denda_kerusakan').textContent =
+            'Rp ' + dendaKerusakan.toLocaleString('id-ID');
 
         document.getElementById('total_denda').textContent =
             'Rp ' + total.toLocaleString('id-ID');
     }
+
+    document.querySelectorAll('input[name^="barang"][name$="[denda]"]').forEach(input => {
+        input.addEventListener('input', hitungTotalDenda);
+    });
 </script>
 
 @endsection
