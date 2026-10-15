@@ -44,6 +44,14 @@ class PeminjamController extends Controller
         return view('peminjam.katalog', compact('alat'));
     }
 
+    // DETAIL ALAT
+    public function detailAlat($id)
+    {
+        $alat = Alat::with('kategori')->findOrFail($id);
+
+        return view('peminjam.detail-alat', compact('alat'));
+    }
+
     // HALAMAN MENGAJUKAN PEMINJAMAN
     public function formPeminjaman()
     {
@@ -159,19 +167,21 @@ class PeminjamController extends Controller
         }
     }
 
+    
     // MELIHAT DATA PEMINJAMAN MILIK SENDIRI
     public function riwayatPeminjaman()
     {
         $peminjaman = Peminjaman::with([
-            'detailPinjam.alat',
-            'pengembalian'
+            'detailPinjam.alat.kategori',
+            'pengembalian.detailPengembalian.alat'
         ])
             ->where('user_id', auth()->id())
             ->latest()
             ->get();
 
-        return view('peminjam.peminjaman', compact('peminjaman'));
+        return view('peminjam.riwayat', compact('peminjaman'));
     }
+
 
     // HALAMAN PENGEMBALIAN
     public function pengembalian()

@@ -78,11 +78,11 @@
                                     <div class="flex items-center gap-4">
 
                                         @if($alat->gambar)
-                                            <img
-                                                src="{{ asset('storage/' . $alat->gambar) }}"
-                                                alt="{{ $alat->nama_alat }}"
-                                                class="w-16 h-16 object-cover rounded-lg border border-slate-200"
-                                            >
+                                        <img
+                                            src="{{ asset('storage/' . preg_replace('#^(?:public/)?storage/#', '', $alat->gambar)) }}"
+                                            alt="{{ $alat->nama_alat }}"
+                                            class="w-24 h-24 object-contain rounded-lg border border-slate-200"
+                                        >
                                         @else
                                             <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-400">
                                                 Tidak ada

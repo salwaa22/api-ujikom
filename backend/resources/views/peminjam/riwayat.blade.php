@@ -66,6 +66,14 @@
                         </th>
 
                         <th class="px-6 py-4 text-center font-semibold text-gray-700">
+                            Tanggal Dikembalikan
+                        </th>
+
+                        <th class="px-6 py-4 text-center font-semibold text-gray-700">
+                            Total Denda
+                        </th>
+
+                        <th class="px-6 py-4 text-center font-semibold text-gray-700">
                             Status
                         </th>
 
@@ -128,6 +136,27 @@
 
                                 </td>
 
+                                
+                                {{-- Tanggal pengembalian sebenarnya --}}
+                                <td class="px-6 py-4 text-center text-gray-600">
+                                    @if($pinjam->pengembalian)
+                                        {{ \Carbon\Carbon::parse($pinjam->pengembalian->tgl_kembali)->format('d-m-Y') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+
+                                {{-- Total denda --}}
+                                <td class="px-6 py-4 text-center">
+                                    @if($pinjam->pengembalian)
+                                        <span class="font-semibold text-red-600">
+                                            Rp {{ number_format($pinjam->pengembalian->denda ?? 0, 0, ',', '.') }}
+                                        </span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+
 
                                 {{-- Status --}}
                                 <td class="px-6 py-4 text-center">
@@ -174,7 +203,7 @@
 
                         <tr>
 
-                            <td colspan="6" class="px-6 py-12 text-center">
+                            <td colspan="8" class="px-6 py-12 text-center">
 
                                 <div class="text-5xl mb-3">
                                     📋

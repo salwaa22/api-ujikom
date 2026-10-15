@@ -168,6 +168,18 @@
                             <span>Mengembalikan Alat</span>
                         </a>
 
+                        <a href="{{ route('peminjam.peminjaman.saya') }}"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01">
+                                </path>
+                            </svg>
+                            <span>Riwayat Peminjaman</span>
+                        </a>
+
                     @endif
 
                 </nav>

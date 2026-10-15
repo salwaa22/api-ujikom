@@ -93,6 +93,10 @@ Route::middleware(['auth', 'role:peminjam'])->prefix('peminjam')->name('peminjam
         Route::get('/alat', [PeminjamController::class, 'katalogAlat'])
             ->name('katalog');
 
+        // Detail Alat
+        Route::get('/alat/{id}', [PeminjamController::class, 'detailAlat'])
+            ->name('alat.show');
+
         // Pengajuan Peminjaman
         Route::get('/peminjaman', [PeminjamController::class, 'formPeminjaman'])
             ->name('peminjaman');

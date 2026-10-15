@@ -85,11 +85,12 @@
 
                                 @if($alat->gambar)
                                     <img
-                                        src="{{ asset('storage/' . $alat->gambar) }}"
+                                        src="{{ asset('storage/' . preg_replace('#^(?:public/)?storage/#', '', $alat->gambar)) }}"
                                         alt="{{ $alat->nama_alat }}"
-                                        class="w-14 h-14 object-cover rounded-lg border border-slate-200"
+                                        class="w-14 h-14 object-contain rounded-lg border border-slate-200"
                                     >
                                 @else
+                                
                                     <div class="w-14 h-14 rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-400">
                                         Tidak ada
                                     </div>
@@ -122,11 +123,11 @@
 
                             <td class="px-6 py-4 text-center">
 
-                                <a href="{{ route('peminjam.peminjaman') }}"
-                                   class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition">
-                                    Ajukan Peminjaman
+                                <a href="{{ route('peminjam.alat.show', $alat->id) }}"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+                                    Detail Alat
                                 </a>
-
+ 
                             </td>
 
                         </tr>
