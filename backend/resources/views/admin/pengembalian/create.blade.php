@@ -319,26 +319,6 @@
 
             </div>
 
-            <div class="mb-6">
-                <label class="block text-gray-700 text-sm font-semibold mb-2">
-                    Denda Kerusakan
-                </label>
-
-                <input
-                    type="number"
-                    name="denda_kerusakan"
-                    id="denda_kerusakan"
-                    min="0"
-                    value="0"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    placeholder="Masukkan denda kerusakan"
-                    oninput="hitungTotalDenda(this.value)">
-
-                <p class="text-xs text-gray-500 mt-1">
-                    Isi 0 jika tidak ada kerusakan.
-                </p>
-            </div>
-
             <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
 
                 <div class="flex justify-between items-center mb-2">
